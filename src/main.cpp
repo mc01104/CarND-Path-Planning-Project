@@ -214,31 +214,20 @@ int main()
             int left_lane = lane - 1;
             int right_lane = lane + 1;
 
-            // always prefer middle lane if safe
-            if (!CheckPrediction(sensor_fusion, 1, car_s, prev_size, true))
-            {
-              lane = 1;
-            }
+            // // always prefer middle lane if safe
+            // if (!CheckPrediction(sensor_fusion, 1, car_s, prev_size, true))
+            // {
+            //   lane = 1;
+            // }
             // if there is a lane to the left of us
-            else if (left_lane >= 0)
+            if (left_lane >= 0 && !CheckPrediction(sensor_fusion, left_lane, car_s, prev_size, true))
             {
               // if changing lane to the left safe is safe
-              if (!CheckPrediction(sensor_fusion, left_lane, car_s, prev_size, true))
-              {
-                lane = left_lane;
-              }
+              lane = left_lane;
             }
-            else if (right_lane >= 0)
+            else if (right_lane <= 2 && !CheckPrediction(sensor_fusion, right_lane, car_s, prev_size, true))
             {
-              bool too_close_right = CheckPrediction(sensor_fusion, right_lane, car_s, prev_size, true);
-              if (too_close_right)
-              {
-                //keep lane
-              }
-              else
-              {
-                lane = right_lane;
-              }
+              lane = right_lane;
             }
             else
             {
