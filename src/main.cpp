@@ -44,12 +44,8 @@ bool CheckPrediction(json sensor_fusion, int lane, double car_s, int window, boo
   return false;
 }
 
-void ComputeState(int prev_size, double end_path_s, double car_s, json sensor_fusion, int &lane, double &ref_vel)
+void ComputeState(int prev_size, double car_s, json sensor_fusion, int &lane, double &ref_vel)
 {
-  if (prev_size > 2)
-  {
-    car_s = end_path_s;
-  }
   bool too_close = false;
 
   too_close = CheckPrediction(sensor_fusion, lane, car_s, prev_size, false);
@@ -58,62 +54,24 @@ void ComputeState(int prev_size, double end_path_s, double car_s, json sensor_fu
   {
     int left_lane = lane - 1;
     int right_lane = lane + 1;
-    if (left_lane >= 0)
-    {
-      bool too_close_left = CheckPrediction(sensor_fusion, left_lane, car_s, prev_size, true);
-      if (too_close_left)
-      {
-        if (right_lane <= 2)
-        {
-          bool too_close_right = CheckPrediction(sensor_fusion, right_lane, car_s, prev_size, true);
-          if (too_close_right)
-          {
-            // keep lane
-          }
-          else
-          {
-            lane = right_lane;
-          }
-        }
-        else
-        {
-          bool too_close_left1 = CheckPrediction(sensor_fusion, left_lane, car_s, prev_size, true);
-          if (too_close_left1)
-          {
-            //keep lane
-          }
-          else
-          {
-            lane = left_lane;
-          }
-        }
-      }
-      else
-      {
-        lane = left_lane;
-      }
-    }
-    else
-    {
-      bool too_close_right = CheckPrediction(sensor_fusion, right_lane, car_s, prev_size, true);
-      if (too_close_right)
-      {
-        // keep lane
-      }
-      else
-      {
-        lane = right_lane;
-      }
-    }
 
+    if (left_lane >= 0 && !CheckPrediction(sensor_fusion, left_lane, car_s, prev_size, true))
+    {
+      // if changing lane to the left safe is safe
+      lane = left_lane;
+    }
+    else if (right_lane <= 2 && !CheckPrediction(sensor_fusion, right_lane, car_s, prev_size, true))
+    {
+      lane = right_lane;
+    }
     ref_vel -= .224;
   }
-
   else if (ref_vel < 49.5)
   {
     ref_vel += .224;
   }
 }
+
 int main()
 {
   uWS::Hub h;
@@ -207,39 +165,7 @@ int main()
           }
           bool too_close = false;
 
-          too_close = CheckPrediction(sensor_fusion, lane, car_s, prev_size, false);
-
-          if (too_close)
-          {
-            int left_lane = lane - 1;
-            int right_lane = lane + 1;
-
-            // // always prefer middle lane if safe
-            // if (!CheckPrediction(sensor_fusion, 1, car_s, prev_size, true))
-            // {
-            //   lane = 1;
-            // }
-            // if there is a lane to the left of us
-            if (left_lane >= 0 && !CheckPrediction(sensor_fusion, left_lane, car_s, prev_size, true))
-            {
-              // if changing lane to the left safe is safe
-              lane = left_lane;
-            }
-            else if (right_lane <= 2 && !CheckPrediction(sensor_fusion, right_lane, car_s, prev_size, true))
-            {
-              lane = right_lane;
-            }
-            else
-            {
-            }
-            ref_vel -= .224;
-          }
-          else if (ref_vel < 49.5)
-          {
-            ref_vel += .224;
-          }
-
-          // ComputeState(prev_size, end_path_s, car_s, sensor_fusion, lane, ref_vel);
+          ComputeState(prev_size, car_s, sensor_fusion, lane, ref_vel);
 
           vector<double> ptsx;
           vector<double> ptsy;
